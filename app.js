@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express =require("express");
 const bodyParser = require("body-parser");
 const ejs =require("ejs");
@@ -11,7 +12,7 @@ app.use(bodyParser.urlencoded({
     extended:true
 }))
 
-mongoose.connect("mongodb+srv://sagar-5734:Test123@cluster0.oc0kmhu.mongodb.net/secretsDb",{useNewUrlParser:true})
+mongoose.connect(process.env.DB_KEY,{useNewUrlParser:true})
 const db=mongoose.connection;
 db.on("error",console.error.bind(console,"connection error"));
 db.once("open",()=>{
@@ -23,8 +24,7 @@ const secretsSchema=new mongoose.Schema({
     password:String,
     gender:String
 });
-const secretKey = "Thisisapassword.";
-secretsSchema.plugin(encrypt,{secret:secretKey,encryptedFields: ["password"]});
+secretsSchema.plugin(encrypt,{secret:process.env.SECRETKEY,encryptedFields: ["password"]});
 
 
 const secret = new mongoose.model("secret",secretsSchema);
@@ -68,19 +68,6 @@ app.post("/register",(req,res)=>{
     res.redirect("/login");
 
 })
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 app.listen(3000,function () {

@@ -3,7 +3,8 @@ const express =require("express");
 const bodyParser = require("body-parser");
 const ejs =require("ejs");
 const mongoose=require("mongoose");
-const md5=require("md5")
+const bcrypt=require("bcrypt")
+saltRounds = 10;
 const app=express();
 
 app.use(express.static("public"));
@@ -31,25 +32,29 @@ const secret = new mongoose.model("secret",secretsSchema);
 app.get("/",function(req,res){
     res.render("home");
 })
-
+ 
 app.get("/login",function(req,res){
     res.render("login");
 });
 app.post("/login",(req,res)=>{
     const username=req.body.username;
-    const password=md5(req.body.password);
+    const password=req.body.password;
     secret.findOne({email:username}).then((userfound)=>{
         if(!userfound){
             console.log("user not found");
             res.render("login.ejs")
         }
         else{
-            if(userfound.password === password){
-                res.render("secrets.ejs")
-            }
-            else{
-                console.log("Hy there is a password mismatch")
-            }
+            bcrypt.compare(password, userfound.password, function(err, result) {
+                // result == true
+                if(result===true){
+                    res.render("secrets.ejs");
+                }
+                
+                else{
+                    console.log("Hy there is a password mismatch")
+                }
+            });
         }
     });
 })
@@ -57,15 +62,17 @@ app.get("/register",function(req,res){
     res.render("register");
 })
 app.post("/register",(req,res)=>{
-    const user=new secret({
-        email:req.body.username,
-        password:md5(req.body.password),
-        gender:req.body.gender
+    bcrypt.hash(req.body.password, saltRounds, function(err, hash) {
+        // Store hash in your password DB.
+        const user=new secret({
+            email:req.body.username,
+            password:hash,
+            gender:req.body.gender
+        });
+        user.save();
+        res.redirect("/login");
+        
     });
-
-    user.save();
-    res.redirect("/login");
-
 })
 
 

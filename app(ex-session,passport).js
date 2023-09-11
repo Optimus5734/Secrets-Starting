@@ -7,9 +7,6 @@ const session = require("express-session");  //authentication //cookies
 const passport = require("passport");
 const passportLocalMongoose = require("passport-local-mongoose");
 const app=express();
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const findOrCreate=require("mongoose-findorcreate");
-const { profile } = require('console');
 
 app.use(express.static("public"));
 app.set('view engine','ejs');
@@ -37,57 +34,19 @@ db.once("open",()=>{
 const secretsSchema=new mongoose.Schema({
     email:String,
     password:String,
-    gender:String,
-    googleId:String
+    gender:String
 });
 
 secretsSchema.plugin(passportLocalMongoose);
-secretsSchema.plugin(findOrCreate);
 const secret = new mongoose.model("secret",secretsSchema);
 passport.use(secret.createStrategy());
-passport.serializeUser(function(user, cb) {
-    process.nextTick(function() {
-      return cb(null, {
-        id: user.id,
-        username: user.username,
-        picture: user.picture
-      });
-    });
-  });
-  
-  passport.deserializeUser(function(user, cb) {
-    process.nextTick(function() {
-      return cb(null, user);
-    });
-  });
+passport.serializeUser(secret.serializeUser());
+passport.deserializeUser(secret.deserializeUser());
 
-passport.use(new GoogleStrategy({
-    clientID:  process.env.CLIENT_ID,
-    clientSecret: process.env.CLIENT_SECRET,
-    callbackURL: "http://localhost:3000/auth/google/secrets",
-    userProfileURL:"http://www.googleapis.con/oauth2/v3/userinfo",
-
-  },
-  function(accessToken, refreshToken, profile, cb) {
-    console.log(profile)
-    secret.findOrCreate({ googleId: profile.id }, function (err, user) {
-      return cb(err, user);
-    });
-  }
-));
 app.get("/",function(req,res){
     res.render("home");
 })
-app.get("/auth/google",
-  passport.authenticate('google', { scope: ["profile"] }));
  
-app.get("/auth/google/secrets", 
-  passport.authenticate('google', { failureRedirect: "/login" }),
-  function(req, res) {
-    // Successful authentication, redirect home.
-    res.redirect("/secrets");
-  });
-
 app.get("/login",function(req,res){
     res.render("login");
 });
@@ -142,6 +101,3 @@ app.post("/register",(req,res)=>{
 app.listen(3000,function () {
     console.log("Server has Started");
   })
-
-
-  //running with some error

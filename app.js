@@ -38,7 +38,8 @@ const secretsSchema=new mongoose.Schema({
     email:String,
     password:String,
     gender:String,
-    googleId:String
+    googleId:String,
+    secret:String
 });
 
 secretsSchema.plugin(passportLocalMongoose);
@@ -123,6 +124,18 @@ app.get("/secrets",function (req,res) {
   
 app.get("/register",function(req,res){
     res.render("register");
+})
+app.get("/submit",function(req,res){
+    if(req.isAuthenticated()){
+        res.render("submit");
+    }
+    else{
+        res.redirect("/login")
+    }
+})
+app.post("/submit",(req,res)=>{
+    const sub=req.body.secret;
+
 })
 app.post("/register",(req,res)=>{
     secret.register({username:req.body.username},req.body.password,function(err,user){
